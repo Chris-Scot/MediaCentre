@@ -81,11 +81,11 @@ EOF
 ################################################################################
 
 function EncodeXML {
-   local Result="${1//&amp;/\&amp;}"
-   Result="${Result//&lt;/\&lt;}"
-   Result="${Result//&gt;/\&gt;}"
-   Result="${Result//&quot;/\&quot;}"
-   Result="${Result//&apos;/\&apos;}"
+   local Result="${1//&/&amp;amp;}"
+   Result="${Result//</&amp;lt;}"
+   Result="${Result//>/&amp;gt;}"
+   Result="${Result//\"/&amp;quot;}"
+   Result="${Result//\'/&amp;apos;}"
    echo "$Result"
 }
 
