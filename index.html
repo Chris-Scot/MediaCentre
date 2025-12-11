@@ -81,7 +81,7 @@ EOF
 ################################################################################
 
 function EncodeXML {
-   local Result="${1//&/&amp;amp;}"
+   local Result="${1//&/&amp; amp;}"
    Result="${Result//</&amp;lt;}"
    Result="${Result//>/&amp;gt;}"
    Result="${Result//\"/&amp;quot;}"
