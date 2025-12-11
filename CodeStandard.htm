@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Bash Style Skeleton Reference</title>
+<style>
+body { font-family: monospace; background: #f9f9f9; color: #111; padding: 20px; }
+pre { background: #eee; padding: 15px; border-radius: 8px; overflow-x: auto; }
+h1, h2 { font-family: sans-serif; }
+</style>
+</head>
+<body>
+
+<h1>Bash Skeleton Template & Style Reference</h1>
+
+<h2>Style Notes</h2>
+<ul>
+   <li>Use Bash scripts with <code>#!/bin/bash</code>.</li>
+   <li>Variables: Capitalized words or ALL_CAPS; do not overwrite system vars like PATH.</li>
+   <li>EnvFile assignment immediately after InstanceName.</li>
+   <li>Use <code>${Var##*X}</code>, <code>${Var^^}</code> instead of <code>tr</code>/<code>sed</code>.</li>
+   <li>Prefer <code>if, elif, elif, else, fi</code> instead of <code>case/esac</code>.</li>
+   <li>Function style: <code>function Name { # comment</code></li>
+   <li>Logging: timestamped INFO/WARNING/ERROR messages using <code>$(date +%F\ %T)</code></li>
+   <li>Section dividers: 80+ hashes.</li>
+   <li>PID file/task management for concurrency.</li>
+   <li>JSON parsing via <code>jq</code>, exporting keys as variables.</li>
+   <li>Single-line functions may remain on one line.</li>
+   <li><strong>Indentation preference: 3 spaces per level.</strong></li>
+</ul>
+
+<h2>Skeleton Template</h2>
+<pre><code>
+#!/bin/bash
+################################################################################
+#  Script: SkeletonTemplate_Full.sh
+#  Purpose: Full Bash skeleton template in your HDHomeRun style
+#  Author: Your Name
+#  Date: $(date +%F)
+################################################################################
+
+export Base="$(dirname &quot;$(readlink -f &quot;$0&quot;)&quot;)"
+export InstanceName="${0##*/}"
+EnvFile="$Base/${InstanceName%.sh}.env"
+
+################################################################################
+#  Logging functions
+################################################################################
+
+function LogInfo { echo "$(date +%F\ %T)  INFO:  $*" ; }
+function LogWarning { echo "$(date +%F\ %T)  WARNING:  $*" ; }
+function LogError { echo "$(date +%F\ %T)  ERROR:  $*" ; }
+
+################################################################################
+#  Environment and configuration
+################################################################################
+
+function LoadEnv {
+   if [ -f "$EnvFile" ]; then
+      . "$EnvFile"
+      LogInfo "Loaded environment from $EnvFile"
+   else
+      LogWarning "Environment file not found: $EnvFile"
+   fi
+}
+
+function CreateEnv {
+   cat &lt;&lt; EOF &gt; "$EnvFile"
+WorkDir="\$Base/.Work"
+LogFile="\$WorkDir/${InstanceName%.sh}.log"
+RecordPath="\$Base/Media"
+Port=8480
+ExtraStartPadding=30
+ExtraEndPadding=30
+EOF
+   LogInfo "Created environment template: $EnvFile"
+}
+
+################################################################################
+#  Helper / Utility functions
+################################################################################
+
+function EncodeXML {
+   local Result="${1//&/&amp;}"
+   Result="${Result//</&lt;}"
+   Result="${Result//>/&gt;}"
+   Result="${Result//\"/&quot;}"
+   Result="${Result//\'/&apos;}"
+   echo "$Result"
+}
+
+function CheckPid {
+   local PidFile="$1"
+   if [ -f "$PidFile" ]; then
+      if ps -fp $(< "$PidFile") &gt;/dev/null; then
+         LogInfo "Process $(< "$PidFile") is running"
+         return 0
+      else
+         LogWarning "Stale PID file found, removing $PidFile"
+         rm "$PidFile"
+      fi
+   fi
+   return 1
+}
+
+function CleanUpFiles {
+   LogInfo "Cleaning up files in $WorkDir"
+}
+
+function ParseJsonKey {
+   local Key="$1"
+   local File="$2"
+   export "$Key"="$(jq -r ".$Key" "$File")"
+}
+
+################################################################################
+#  Task handling
+################################################################################
+
+function ActionTask {
+   local TaskName="$1"
+   local PidFile="$WorkDir/$TaskName.pid"
+   if CheckPid "$PidFile"; then
+      LogInfo "$TaskName is already running"
+      return
+   fi
+
+   echo $$ &gt; "$PidFile"
+   LogInfo "Started task $TaskName"
+
+   local EndTime=$(( $(date +%s) + 60 ))
+   while [ $EndTime -gt $(date +%s) ]; do
+      sleep 5
+      LogInfo "Task $TaskName running..."
+   done
+
+   LogInfo "Task $TaskName finished"
+   rm "$PidFile"
+}
+
+################################################################################
+#  Starting & Stopping
+################################################################################
+
+function Initialize {
+   LoadEnv
+   mkdir -p "$WorkDir" "$RecordPath"
+   LogInfo "Initialization complete"
+}
+
+function Initialize {
+   LogInfo "Finalizing script"
+   CleanUpFiles
+}
+
+################################################################################
+#  Main execution
+################################################################################
+
+Initialize
+
+##############################################################################
+# Server mode (no arguments)
+##############################################################################
+
+if [ "$1" = "" ]; then
+    echo "Starting EPG server on port $PORT using nc -ll -e ..."
+    echo "Root: $ROOT_DIR"
+
+    # Persistent listen, call THIS script with argument "Run"
+    nc -ll -p "$PORT" -e "$0" Run
+
+    # If nc exits or is killed, exit server
+    echo "nc exited, shutting down server"
+    exit 0
+fi
+
+##############################################################################
+# Request handler mode
+##############################################################################
+
+if [ "${1^^}" = "Run" ]; then
+   # Read first request line only (simple HTTP/1.0/1.1)
+   read RequestLine || exit 0
+   LogInfo "No arguments provided, running default workflow"
+elif [ "${1^^}" = "STOP" ]; then
+   LogInfo "Received STOP command"
+elif [ "${1^^}" = "GETPROGRAMDATA" ]; then
+   LogInfo "Fetching program data"
+else
+   ActionTask "$1"
+fi
+
+Finalize
+LogInfo "Script $InstanceName completed."
+
+################################################################################
+#  Style Notes included here as reference
+################################################################################
+</code></pre>
+
+</body>
+</html>
