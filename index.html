@@ -81,11 +81,11 @@ EOF
 ################################################################################
 
 function EncodeXML {
-   local Result="${1//&/&amp;}"
-   Result="${Result//</&lt;}"
-   Result="${Result//>/&gt;}"
-   Result="${Result//\"/&quot;}"
-   Result="${Result//\'/&apos;}"
+   local Result="${1//&amp;/\&amp;}"
+   Result="${Result//&lt;/\&lt;}"
+   Result="${Result//&gt;/\&gt;}"
+   Result="${Result//&quot;/\&quot;}"
+   Result="${Result//&apos;/\&apos;}"
    echo "$Result"
 }
 
@@ -148,7 +148,7 @@ function Initialize {
    LogInfo "Initialization complete"
 }
 
-function Initialize {
+function Finalize {
    LogInfo "Finalizing script"
    CleanUpFiles
 }
